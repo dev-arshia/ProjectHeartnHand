@@ -9,6 +9,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const { db, normalizeName, generateCaseId } = require('../db');
+const { generateMatchesForReport } = require('../matching/generate');
 
 const router = express.Router();
 
@@ -105,11 +106,17 @@ router.post('/', upload.single('photo'), (req, res) => {
     VALUES (?, 'report_created', ?, ?)
   `).run(result.lastInsertRowid, reporter_name || 'anonymous', `Filed via ${source_channel || 'public'} channel`);
 
-  // NOTE: automatic matching against opposite-type reports is wired up
-  // in a later step (matching/score.js) — not yet in this route.
+  let created = db.prepare('SELECT * FROM reports WHERE id = ?').get(result.lastInsertRowid);
 
-  const created = db.prepare('SELECT * FROM reports WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(created);
+  // Compare this new report against every report of the opposite type and
+  // store any candidate matches for admin review. This can flip `created`'s
+  // status from 'unverified' to 'possible_match', so we re-fetch below.
+  const newMatches = generateMatchesForReport(created);
+  if (newMatches.length > 0) {
+    created = db.prepare('SELECT * FROM reports WHERE id = ?').get(result.lastInsertRowid);
+  }
+
+  res.status(201).json({ ...created, matches_found: newMatches.length });
 });
 
 // --- List reports (admin dashboard) ---------------------------------------

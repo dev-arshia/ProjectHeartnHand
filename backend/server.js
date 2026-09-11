@@ -35,9 +35,9 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/matches', require('./routes/matches'));
 
-// Mounted in later steps:
-// app.use('/api/matches', require('./routes/matches'));
+// Mounted in a later step:
 // app.use('/api/admin', require('./routes/admin'));
 
 app.listen(PORT, () => {
