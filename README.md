@@ -35,8 +35,9 @@ doesn't guarantee.
   submitting — it only ever suggests values, never submits on its own.
 - **Explainable fuzzy matching** — every new report is automatically
   scored against opposite-type reports on name, age, location, date/time,
-  description, and identifying marks. No black-box ML: every score comes
-  with a per-signal High/Medium/Low breakdown an admin can actually read.
+  description, identifying marks, and (when both sides have a photo)
+  perceptual photo similarity. No black-box ML: every score comes with a
+  per-signal High/Medium/Low breakdown an admin can actually read.
 - **Duplicate consolidation** — same-type reports (two missing reports,
   two found reports) are compared too, to catch the same person reported
   twice under different spellings.
@@ -124,8 +125,11 @@ docs/
 
 Every new report is compared against every existing report of the
 opposite type (missing↔found) and every existing report of the same
-type (for duplicate detection), using six signals — name, age, location,
-date/time, description, identifying marks. Each signal is scored 0-100 and
+type (for duplicate detection), using seven signals — name, age, location,
+date/time, description, identifying marks, and photo similarity (when
+both sides have a photo, via perceptual hashing — see
+[docs/LIMITATIONS.md](docs/LIMITATIONS.md) for what that does and doesn't
+mean). Each signal is scored 0-100 and
 labeled High/Medium/Low/None; the overall score is a weighted average over
 whichever signals actually had data on both sides (a blank field never
 unfairly drags a score down). Anything scoring above a threshold becomes a

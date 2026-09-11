@@ -6,18 +6,24 @@ we deliberately did not build, and why — not an apology, a scope record.
 ## What the matching engine is (and isn't)
 
 - **It is not machine learning.** It's a weighted, rule-based scoring
-  function over six signals (name, age, location, date/time, description,
-  identifying marks), each computed with well-established string-similarity
-  algorithms (`fuzzball`, a Jaro-Winkler/Levenshtein-style library). We
-  chose this deliberately over an ML model: it's fully explainable (an
-  admin can see exactly why a pair scored 89%), doesn't require training
-  data we don't have, and is honest about its own confidence — it never
-  claims more certainty than a string comparison can actually support.
-- **Photo similarity is not scored.** Uploaded photos are shown side by
-  side to the human reviewer, but the score itself doesn't currently
-  factor in image similarity. Adding a perceptual-hash or embedding-based
-  signal is a natural next step, but we didn't want a "photo similarity"
-  number on screen that we hadn't validated wasn't misleading.
+  function over seven signals (name, age, location, date/time, description,
+  identifying marks, photo), each computed with well-established
+  similarity algorithms — `fuzzball` (Jaro-Winkler/Levenshtein-style) for
+  text, perceptual hashing for photos. We chose this deliberately over an
+  ML model: it's fully explainable (an admin can see exactly why a pair
+  scored 89%), doesn't require training data we don't have, and is honest
+  about its own confidence — it never claims more certainty than a string
+  or hash comparison can actually support.
+- **Photo similarity is real but deliberately modest.** It uses perceptual
+  hashing (`blockhash-core`) — comparing overall visual similarity
+  (framing, color, lighting), NOT face recognition. It has no concept of
+  identity and will score two different people in similarly-lit blue
+  shirts as visually similar. That's why it's labeled "experimental" in
+  the UI and weighted at 20%, not treated as decisive. A real deployment
+  wanting stronger photo matching would need a validated face-embedding
+  model and a lot more scrutiny before trusting its number the way this
+  weight suggests — we didn't want to overclaim what a hackathon-timeframe
+  implementation can responsibly deliver.
 - **The match/duplicate thresholds (50% / 60%) are demo-tuned, not
   statistically validated.** They were chosen by testing against the seed
   dataset, not against real-world disaster report data (which we don't
@@ -95,8 +101,9 @@ beyond "admin". Enough to gate a demo dashboard; not a real auth system.
 
 ## What we'd build next with more time
 
-1. Photo similarity as an additional (clearly labeled "experimental")
-   signal in the match score.
+1. A validated face-embedding model to replace/supplement the current
+   perceptual-hash photo signal, which only measures overall visual
+   similarity, not identity.
 2. A real search index for matching at scale beyond a few hundred records.
 3. Rate limiting and stronger auth (password reset, multiple admin roles —
    e.g. "camp staff" who can file reports but not approve matches).

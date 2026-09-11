@@ -80,6 +80,14 @@ try {
   // Column already exists — fine, nothing to do.
 }
 
+// Another lightweight migration: stores each photo's perceptual hash so
+// we don't have to re-decode and re-hash the image on every comparison.
+try {
+  db.exec(`ALTER TABLE reports ADD COLUMN photo_hash TEXT`);
+} catch (err) {
+  // Column already exists — fine, nothing to do.
+}
+
 // duplicate_flags: same idea as `matches`, but for two reports of the
 // SAME type (two missing reports, or two found reports) that look like
 // they describe the same person filed twice — e.g. one from a family

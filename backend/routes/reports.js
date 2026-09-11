@@ -10,6 +10,7 @@ const crypto = require('node:crypto');
 
 const { db, normalizeName, generateCaseId } = require('../db');
 const { generateMatchesForReport, generateDuplicatesForReport } = require('../matching/generate');
+const { computePhotoHash } = require('../matching/photo');
 const { requireAdmin } = require('./admin');
 
 const router = express.Router();
@@ -71,16 +72,21 @@ router.post('/', upload.single('photo'), (req, res) => {
 
   const case_id = generateCaseId(report_type);
   const photo_path = req.file ? `/uploads/${req.file.filename}` : null;
+  // Computed once at upload time and cached, so every future match
+  // comparison just compares two short hash strings instead of
+  // re-decoding the image. Fails soft (null) for formats it can't
+  // decode (e.g. .webp — see matching/photo.js) or a corrupt file.
+  const photo_hash = photo_path ? computePhotoHash(photo_path) : null;
 
   const insert = db.prepare(`
     INSERT INTO reports (
       case_id, report_type, full_name, name_normalized, age, gender,
       location, event_datetime, description, identifying_marks, photo_path,
-      is_minor, reporter_name, reporter_contact, source_channel
+      photo_hash, is_minor, reporter_name, reporter_contact, source_channel
     ) VALUES (
       @case_id, @report_type, @full_name, @name_normalized, @age, @gender,
       @location, @event_datetime, @description, @identifying_marks, @photo_path,
-      @is_minor, @reporter_name, @reporter_contact, @source_channel
+      @photo_hash, @is_minor, @reporter_name, @reporter_contact, @source_channel
     )
   `);
 
@@ -96,6 +102,7 @@ router.post('/', upload.single('photo'), (req, res) => {
     description: description || null,
     identifying_marks: identifying_marks || null,
     photo_path,
+    photo_hash,
     is_minor: is_minor === 'true' || is_minor === true ? 1 : 0,
     reporter_name: reporter_name || null,
     reporter_contact: reporter_contact || null,

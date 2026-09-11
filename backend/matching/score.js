@@ -8,17 +8,25 @@
 // when a human has to make the final call on a real family's case.
 
 const fuzzball = require('fuzzball');
+const { scorePhotoHashes } = require('./photo');
 
 // How much each signal counts toward the final 0-100 score.
 // These weights are a starting point for the demo, not a scientifically
 // tuned model — tune them by feel while testing against the seed data.
+// Photo gets real but modest weight: it's a genuine signal (perceptual
+// hashing, not face recognition — see photo.js), but we deliberately
+// don't let it dominate the score the way a validated face-matching
+// model might justify. When no photo exists on one/both sides, this
+// weight is dropped and redistributed among the other signals, same as
+// every other optional field.
 const WEIGHTS = {
-  name: 0.30,
-  age: 0.15,
-  location: 0.20,
-  datetime: 0.15,
+  name: 0.25,
+  age: 0.10,
+  location: 0.15,
+  datetime: 0.10,
   description: 0.10,
   marks: 0.10,
+  photo: 0.20,
 };
 
 // Turns a 0-100 sub-score into a human-readable label.
@@ -87,6 +95,10 @@ function scoreMarks(a, b) {
   return fuzzball.token_set_ratio(a, b);
 }
 
+function scorePhoto(hashA, hashB) {
+  return scorePhotoHashes(hashA, hashB); // already returns 0-100 or null
+}
+
 // --- Combine everything ---------------------------------------------------
 
 /**
@@ -105,6 +117,7 @@ function compareReports(missing, found) {
     datetime: scoreDatetime(missing.event_datetime, found.event_datetime),
     description: scoreDescription(missing.description, found.description),
     marks: scoreMarks(missing.identifying_marks, found.identifying_marks),
+    photo: scorePhoto(missing.photo_hash, found.photo_hash),
   };
 
   // Only average over signals we actually had data for on both sides —
