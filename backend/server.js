@@ -1,0 +1,41 @@
+// backend/server.js
+//
+// Entry point for the whole app. Starts an Express server that:
+//   1. Serves the frontend (plain HTML/CSS/JS) as static files.
+//   2. Exposes a JSON API under /api/* (routes added in later steps).
+//
+// Run it with: npm start   (or npm run dev to auto-restart on file changes)
+
+const path = require('node:path');
+const express = require('express');
+
+// Importing db.js here makes sure the database file + tables exist as
+// soon as the server boots, even before any route touches them.
+require('./db');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
+// Serve the two frontend areas as static sites.
+app.use('/', express.static(path.join(__dirname, '..', 'frontend', 'public')));
+app.use('/admin', express.static(path.join(__dirname, '..', 'frontend', 'admin')));
+
+// Uploaded photos (added in a later step) will live here.
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Simple health check — useful for confirming the server is alive,
+// both locally and after deploying.
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', service: 'heart-and-hand', time: new Date().toISOString() });
+});
+
+// API routes get mounted here as we build them, e.g.:
+// app.use('/api/reports', require('./routes/reports'));
+// app.use('/api/matches', require('./routes/matches'));
+// app.use('/api/admin', require('./routes/admin'));
+
+app.listen(PORT, () => {
+  console.log(`Heart & Hand server running at http://localhost:${PORT}`);
+});
