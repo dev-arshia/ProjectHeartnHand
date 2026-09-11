@@ -93,6 +93,23 @@ surface area without adding safety.
 - There is no encryption at rest — `data.db` is a plain SQLite file. Fine
   for a local demo; not fine for a real deployment without further work.
 
+## Deployment notes
+
+If deployed to a host with ephemeral disk (e.g. Render's free tier,
+which wipes local files on every restart/redeploy), two things follow:
+- **Data doesn't persist across restarts.** We handle this by
+  auto-seeding demo data on boot whenever the database is empty
+  (`server.js` checks report count, calls `data/seed.js` if zero) — so a
+  cold-started deploy always shows a working demo instead of a blank app.
+  This means, though, that anything a real user did (filed a report,
+  approved a match) between deploys is not retained. Fine for a hackathon
+  demo link; not fine for anything real without a persistent database.
+- **Uploaded photos don't persist either**, for the same reason — they
+  live in `backend/uploads/`, on the same ephemeral disk.
+- A real deployment needs a persistent database (e.g. Postgres) and
+  object storage for photos (e.g. S3-compatible storage) — both
+  reasonable follow-ups, both out of scope for this timeframe.
+
 ## Auth
 
 The admin login is a single seeded account with a session cookie — no

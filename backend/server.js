@@ -14,7 +14,18 @@ const cookieSession = require('cookie-session');
 
 // Importing db.js here makes sure the database file + tables exist as
 // soon as the server boots, even before any route touches them.
-require('./db');
+const { db } = require('./db');
+
+// Auto-seed demo data if the database is empty. This matters on hosts
+// with ephemeral disk (e.g. Render's free tier wipes local files on
+// every restart) — without this, a cold-started deploy would boot to a
+// completely blank app. Only runs when reports is actually empty, so it
+// never wipes real data from an active session.
+const reportCount = db.prepare('SELECT COUNT(*) as n FROM reports').get().n;
+if (reportCount === 0) {
+  console.log('Database is empty — auto-seeding demo data...');
+  require('../data/seed').seedDemoData();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
