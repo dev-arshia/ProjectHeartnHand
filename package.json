@@ -1,7 +1,7 @@
 {
-  "name": "heart-and-hand",
+  "name": "projectheartnhand",
   "version": "0.1.0",
-  "description": "Heart & Hand — Missing Person Coordination system for disaster response. Reconciles missing/found-person reports from many channels with explainable fuzzy matching and human-verified confirmation.",
+  "description": "ProjectHeartnHand — Missing Person Coordination system for disaster response. Reconciles missing/found-person reports from many channels with explainable fuzzy matching and human-verified confirmation.",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",

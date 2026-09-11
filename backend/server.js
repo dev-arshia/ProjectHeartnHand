@@ -28,7 +28,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Simple health check — useful for confirming the server is alive,
 // both locally and after deploying.
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'heart-and-hand', time: new Date().toISOString() });
+  res.json({ status: 'ok', service: 'projectheartnhand', time: new Date().toISOString() });
 });
 
 app.use('/api/reports', require('./routes/reports'));
@@ -38,5 +38,5 @@ app.use('/api/reports', require('./routes/reports'));
 // app.use('/api/admin', require('./routes/admin'));
 
 app.listen(PORT, () => {
-  console.log(`Heart & Hand server running at http://localhost:${PORT}`);
+  console.log(`ProjectHeartnHand server running at http://localhost:${PORT}`);
 });

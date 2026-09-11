@@ -10,7 +10,7 @@ After a disaster, reports about missing and rescued people pour in from helpline
 
 ## What this does
 
-Heart & Hand collects missing- and found-person reports, scores possible matches between them using explainable fuzzy-matching (name, age, location, time, description, identifying marks), and puts every match in front of a **human verifier** before anyone is told a match was found. Families can check an honest status page with a case ID — including when there's *no* confirmed answer yet.
+ProjectHeartnHand collects missing- and found-person reports, scores possible matches between them using explainable fuzzy-matching (name, age, location, time, description, identifying marks), and puts every match in front of a **human verifier** before anyone is told a match was found. Families can check an honest status page with a case ID — including when there's *no* confirmed answer yet.
 
 **This is deliberately not:** a facial-recognition system, an automated notification system, or a replacement for field search-and-rescue. Human verification is a hard requirement, not a fallback.
 
@@ -18,7 +18,7 @@ Heart & Hand collects missing- and found-person reports, scores possible matches
 
 - Frontend: plain HTML/CSS/JavaScript (no framework/build step)
 - Backend: Node.js + Express
-- Database: SQLite (`better-sqlite3`)
+- Database: SQLite (built-in `node:sqlite` — no install, no compiler needed)
 - Matching: `fuzzball` (Jaro-Winkler/Levenshtein-style string similarity) + a weighted, explainable scoring function
 
 ## Getting started
