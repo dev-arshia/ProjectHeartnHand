@@ -27,6 +27,35 @@ we deliberately did not build, and why — not an apology, a scope record.
   demo records; would need real indexing (e.g. a proper search engine or
   vector index for the photo-similarity case) at real disaster scale.
 
+## Where AI (Gemini) is used, and where it deliberately isn't
+
+Two features call the Gemini API — both are assistive, neither makes a
+decision the system acts on:
+
+1. **Smart intake parsing** turns a free-text description into suggested
+   form field values. It never creates or submits a report by itself —
+   the structured fields still land in an editable form a human reviews
+   before hitting Submit.
+2. **Match explanations** turn the deterministic score breakdown into one
+   readable paragraph for a busy admin. Critically: the explanation is
+   generated *from* the already-computed score, and cannot change it —
+   the approve/reject decision is made from the same evidence either way.
+
+**The match/duplicate scoring itself has no AI in it at all** — that's
+the deterministic engine described above. We kept AI out of the actual
+scoring on purpose: an LLM asked "does this match?" would produce a
+plausible-sounding but unauditable answer, which is the opposite of what
+a life-safety verification workflow needs. The one place we did use AI is
+where wrongness costs almost nothing (a form pre-fill a human reviews, a
+narration of a score that already exists) — never where wrongness could
+mislead a verifier or a family.
+
+Both features **fail soft**: no API key, a timeout, a malformed response —
+none of it crashes the app or blocks a workflow. Intake parsing falls
+back to "please fill in manually"; explanation generation falls back to
+just showing the score breakdown with no narration. We tested this
+explicitly with no key configured before ever testing with one.
+
 ## What "human verification" actually guarantees
 
 No code path in this system can set a report's status to `verified_match`

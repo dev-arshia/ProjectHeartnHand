@@ -29,7 +29,10 @@ doesn't guarantee.
 
 - **Multi-channel intake** — public report forms for both missing and
   found/rescued people, with a source-channel field (helpline, camp,
-  hospital, volunteer, public).
+  hospital, volunteer, public). Includes an optional **AI-assisted
+  free-text intake**: paste a rough description (like a phone transcript)
+  and Gemini pre-fills the structured fields for a human to review before
+  submitting — it only ever suggests values, never submits on its own.
 - **Explainable fuzzy matching** — every new report is automatically
   scored against opposite-type reports on name, age, location, date/time,
   description, and identifying marks. No black-box ML: every score comes
@@ -39,7 +42,10 @@ doesn't guarantee.
   twice under different spellings.
 - **Human verification workflow** — candidate matches sit as `pending`
   until an authenticated admin approves or rejects them. Nothing in the
-  scoring engine can mark a case verified on its own.
+  scoring engine can mark a case verified on its own. An optional
+  **AI-generated plain-language explanation** narrates the score
+  breakdown in one paragraph for the admin — purely descriptive, computed
+  *from* the score, never the other way around.
 - **Full audit trail** — every report creation, match, approval,
   rejection, and merge is logged with who did it and when.
 - **Honest family status page** — a case-ID lookup that reports the real
@@ -55,6 +61,10 @@ doesn't guarantee.
 - **Matching:** [`fuzzball`](https://www.npmjs.com/package/fuzzball)
   (Jaro-Winkler/Levenshtein-style string similarity) + a weighted,
   explainable scoring function we wrote (`backend/matching/score.js`)
+- **AI (optional):** [Gemini API](https://aistudio.google.com/apikey)
+  (free tier) for two assistive features — see above. The app runs
+  completely fine with no key configured; both features just fall back
+  to manual entry / no explanation shown.
 
 We chose this stack specifically to be finishable by a small student team
 in a hackathon timeframe — see [docs/LIMITATIONS.md](docs/LIMITATIONS.md)
@@ -73,6 +83,11 @@ npm run seed    # populates realistic demo data — duplicates, misspellings,
                  # a confirmed match, a rejected match, unrelated people
 npm start
 ```
+
+**Optional — enable AI features:** copy `.env.example` to `.env` and set
+`GEMINI_API_KEY` (free key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey)).
+Not required to run or demo the app — everything else works identically
+without it.
 
 Open **http://localhost:3000** for the public site, or
 **http://localhost:3000/admin/login.html** for the admin dashboard
