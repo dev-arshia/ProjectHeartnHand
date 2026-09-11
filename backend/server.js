@@ -31,8 +31,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'heart-and-hand', time: new Date().toISOString() });
 });
 
-// API routes get mounted here as we build them, e.g.:
-// app.use('/api/reports', require('./routes/reports'));
+app.use('/api/reports', require('./routes/reports'));
+
+// Mounted in later steps:
 // app.use('/api/matches', require('./routes/matches'));
 // app.use('/api/admin', require('./routes/admin'));
 
