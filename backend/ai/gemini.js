@@ -8,7 +8,7 @@
 // (manual form entry, or just no AI explanation shown). AI here is
 // always a convenience layer — nothing in the app depends on it working.
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const TIMEOUT_MS = 10_000;
 
 /**
