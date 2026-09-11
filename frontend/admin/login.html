@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login — ProjectHeartnHand</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Admin Login</h1>
+    <p>For verified relief coordinators only.</p>
+  </header>
+
+  <main class="container">
+    <div id="message-box"></div>
+
+    <form id="login-form" class="card">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Log In</button>
+    </form>
+
+    <p style="color:#6b675e; font-size:0.85rem;">
+      Demo credentials: <code>admin</code> / <code>admin123</code>
+      (seeded automatically — change via ADMIN_USERNAME / ADMIN_PASSWORD env vars for anything beyond a demo).
+    </p>
+
+    <p><a href="/index.html">&larr; Back to public site</a></p>
+  </main>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const messageBox = document.getElementById('message-box');
+      messageBox.innerHTML = '';
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        messageBox.innerHTML = `<div class="status-message error">${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

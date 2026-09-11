@@ -10,6 +10,7 @@ const crypto = require('node:crypto');
 
 const { db, normalizeName, generateCaseId } = require('../db');
 const { generateMatchesForReport } = require('../matching/generate');
+const { requireAdmin } = require('./admin');
 
 const router = express.Router();
 
@@ -121,7 +122,9 @@ router.post('/', upload.single('photo'), (req, res) => {
 
 // --- List reports (admin dashboard) ---------------------------------------
 // GET /api/reports?type=missing&status=unverified&search=rahul
-router.get('/', (req, res) => {
+// Admin-only: this exposes every reporter's contact info across all
+// cases, not just the one case a family member is checking on.
+router.get('/', requireAdmin, (req, res) => {
   const { type, status, search } = req.query;
 
   let sql = 'SELECT * FROM reports WHERE 1=1';
@@ -150,11 +153,38 @@ router.get('/', (req, res) => {
 
 // --- Get one report by internal numeric id (used by admin case detail,
 // match review screens) ---
+// Admin-only.
 // GET /api/reports/by-id/:id
-router.get('/by-id/:id', (req, res) => {
+router.get('/by-id/:id', requireAdmin, (req, res) => {
   const report = db.prepare('SELECT * FROM reports WHERE id = ?').get(req.params.id);
   if (!report) return res.status(404).json({ error: 'Report not found' });
   res.json(report);
+});
+
+// --- Audit history for one report (admin case detail page) ---
+// Admin-only.
+// GET /api/reports/by-id/:id/audit
+router.get('/by-id/:id/audit', requireAdmin, (req, res) => {
+  const rows = db.prepare(`
+    SELECT * FROM audit_log WHERE report_id = ? ORDER BY created_at DESC
+  `).all(req.params.id);
+  res.json(rows);
+});
+
+// --- Matches involving this report (admin case detail page) ---
+// Admin-only.
+// GET /api/reports/by-id/:id/matches
+router.get('/by-id/:id/matches', requireAdmin, (req, res) => {
+  const rows = db.prepare(`
+    SELECT matches.*, m.full_name AS missing_name, m.case_id AS missing_case_id,
+           f.full_name AS found_name, f.case_id AS found_case_id
+    FROM matches
+    JOIN reports m ON m.id = matches.missing_report_id
+    JOIN reports f ON f.id = matches.found_report_id
+    WHERE matches.missing_report_id = ? OR matches.found_report_id = ?
+    ORDER BY matches.score DESC
+  `).all(req.params.id, req.params.id);
+  res.json(rows.map((r) => ({ ...r, breakdown: JSON.parse(r.breakdown_json) })));
 });
 
 // --- Get one report by public case ID (used by the family status page) ---

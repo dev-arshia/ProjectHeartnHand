@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — ProjectHeartnHand</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="admin-topbar" id="admin-topbar"></div>
+
+  <main class="container-wide">
+    <h1>Dashboard</h1>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="missing">Missing Reports</button>
+      <button class="tab" data-tab="found">Found Reports</button>
+      <button class="tab" data-tab="matches">Pending Matches</button>
+    </div>
+
+    <div class="toolbar" id="report-toolbar">
+      <input type="text" id="search-input" placeholder="Search by name, location, or case ID...">
+      <select id="status-filter">
+        <option value="">All statuses</option>
+        <option value="unverified">Unverified</option>
+        <option value="possible_match">Possible Match</option>
+        <option value="verified_match">Verified Match</option>
+        <option value="rejected">Rejected</option>
+        <option value="closed">Closed</option>
+      </select>
+    </div>
+
+    <div id="content-area"></div>
+  </main>
+
+  <script src="/js/admin-common.js"></script>
+  <script>
+    let currentTab = 'missing';
+
+    document.querySelectorAll('.tab').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTab = btn.dataset.tab;
+        document.getElementById('report-toolbar').style.display = currentTab === 'matches' ? 'none' : 'flex';
+        loadCurrentTab();
+      });
+    });
+
+    document.getElementById('search-input').addEventListener('input', debounce(loadCurrentTab, 300));
+    document.getElementById('status-filter').addEventListener('change', loadCurrentTab);
+
+    function debounce(fn, ms) {
+      let t;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    async function loadCurrentTab() {
+      if (currentTab === 'matches') return loadMatches();
+      return loadReports(currentTab);
+    }
+
+    async function loadReports(type) {
+      const search = document.getElementById('search-input').value.trim();
+      const status = document.getElementById('status-filter').value;
+      const params = new URLSearchParams({ type });
+      if (search) params.set('search', search);
+      if (status) params.set('status', status);
+
+      const res = await fetch(`/api/reports?${params}`);
+      const reports = await res.json();
+
+      const area = document.getElementById('content-area');
+      if (reports.length === 0) {
+        area.innerHTML = `<div class="empty-state">No ${type} reports match your filters.</div>`;
+        return;
+      }
+
+      area.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr><th>Case ID</th><th>Name</th><th>Age</th><th>Location</th><th>Status</th><th>Filed</th></tr>
+          </thead>
+          <tbody>
+            ${reports.map((r) => `
+              <tr onclick="window.location.href='case.html?id=${r.id}'" style="cursor:pointer">
+                <td>${r.case_id}</td>
+                <td>${escapeHtml(r.full_name)}</td>
+                <td>${r.age ?? '—'}</td>
+                <td>${escapeHtml(r.location)}</td>
+                <td>${statusBadge(r.status)}</td>
+                <td>${formatDate(r.created_at)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadMatches() {
+      const res = await fetch('/api/matches?status=pending');
+      const matches = await res.json();
+
+      const area = document.getElementById('content-area');
+      if (matches.length === 0) {
+        area.innerHTML = `<div class="empty-state">No pending matches right now — nothing needs review.</div>`;
+        return;
+      }
+
+      area.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr><th>Score</th><th>Missing Person</th><th>Found Person</th><th>Generated</th><th></th></tr>
+          </thead>
+          <tbody>
+            ${matches.map((m) => `
+              <tr onclick="window.location.href='match-review.html?id=${m.id}'" style="cursor:pointer">
+                <td><strong>${m.score}%</strong></td>
+                <td>${escapeHtml(m.missing_name)} (${m.missing_case_id})</td>
+                <td>${escapeHtml(m.found_name)} (${m.found_case_id})</td>
+                <td>${formatDate(m.created_at)}</td>
+                <td><a href="match-review.html?id=${m.id}">Review &rarr;</a></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str ?? '';
+      return div.innerHTML;
+    }
+
+    function formatDate(isoString) {
+      if (!isoString) return '—';
+      const d = new Date(isoString.replace(' ', 'T') + 'Z');
+      return d.toLocaleString();
+    }
+
+    (async () => {
+      const session = await requireAdminSession();
+      if (session) loadCurrentTab();
+    })();
+  </script>
+</body>
+</html>

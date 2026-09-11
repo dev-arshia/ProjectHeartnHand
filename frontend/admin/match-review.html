@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match Review — ProjectHeartnHand</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="admin-topbar" id="admin-topbar"></div>
+
+  <main class="container-wide">
+    <p><a href="dashboard.html">&larr; Back to dashboard</a></p>
+    <div id="content-area"></div>
+  </main>
+
+  <script src="/js/admin-common.js"></script>
+  <script>
+    const SIGNAL_LABELS = {
+      name: 'Name similarity',
+      age: 'Age similarity',
+      location: 'Location similarity',
+      datetime: 'Date/time proximity',
+      description: 'Description similarity',
+      marks: 'Identifying marks',
+    };
+
+    function evidenceColumn(title, report, photoField) {
+      return `
+        <div class="evidence-column">
+          <h3>${title}</h3>
+          ${report[photoField] ? `<img class="evidence-photo" src="${report[photoField]}" alt="Photo">` : ''}
+          <div class="evidence-field"><div class="label">Case ID</div>${report.case_id || report[Object.keys(report)[0]]}</div>
+          <div class="evidence-field"><div class="label">Name</div>${report.name}</div>
+          <div class="evidence-field"><div class="label">Age</div>${report.age ?? '—'}</div>
+          ${report.gender ? `<div class="evidence-field"><div class="label">Gender</div>${report.gender}</div>` : ''}
+          <div class="evidence-field"><div class="label">Location</div>${report.location}</div>
+          <div class="evidence-field"><div class="label">Date/time</div>${report.datetime ? new Date(report.datetime).toLocaleString() : '—'}</div>
+          <div class="evidence-field"><div class="label">Description</div>${report.description || '—'}</div>
+          <div class="evidence-field"><div class="label">Identifying marks</div>${report.marks || '—'}</div>
+        </div>
+      `;
+    }
+
+    async function loadMatch() {
+      const id = new URLSearchParams(window.location.search).get('id');
+      const area = document.getElementById('content-area');
+
+      const res = await fetch(`/api/matches/${id}`);
+      if (!res.ok) {
+        area.innerHTML = `<div class="status-message error">Match not found.</div>`;
+        return;
+      }
+      const m = await res.json();
+
+      const missing = {
+        case_id: m.missing_case_id, name: m.missing_name, age: m.missing_age,
+        gender: m.missing_gender, location: m.missing_location, datetime: m.missing_datetime,
+        description: m.missing_description, marks: m.missing_marks,
+      };
+      const found = {
+        case_id: m.found_case_id, name: m.found_name, age: m.found_age,
+        gender: m.found_gender, location: m.found_location, datetime: m.found_datetime,
+        description: m.found_description, marks: m.found_marks,
+      };
+
+      const breakdownRows = Object.entries(m.breakdown).map(([key, val]) => `
+        <li class="breakdown-row">
+          <span>${SIGNAL_LABELS[key] || key}</span>
+          <span class="label-${val.label}">${val.label}</span>
+        </li>
+      `).join('');
+
+      const actionsHtml = m.status === 'pending' ? `
+        <div class="action-row">
+          <button class="btn btn-approve" id="approve-btn">Approve Match</button>
+          <button class="btn btn-reject" id="reject-btn">Reject Match</button>
+        </div>
+        <p style="color:#6b675e; font-size:0.85rem; margin-top:8px;">
+          Approving marks both cases as a <strong>verified match</strong> and is visible to the family
+          on their status page. This action is logged with your username and cannot be undone from here.
+        </p>
+      ` : `
+        <div class="status-message ${m.status === 'approved' ? 'success' : 'error'}">
+          This match was already <strong>${m.status}</strong> by ${m.reviewed_by} on ${new Date(m.reviewed_at).toLocaleString()}.
+        </div>
+      `;
+
+      area.innerHTML = `
+        <div class="card">
+          <h2>Possible Match &mdash; <span class="score-badge">${m.score}%</span></h2>
+          <ul class="breakdown-list">${breakdownRows}</ul>
+        </div>
+
+        <div class="card">
+          <div class="evidence-grid">
+            ${evidenceColumn('Missing Person Report', missing)}
+            ${evidenceColumn('Found Person Report', found)}
+          </div>
+          ${actionsHtml}
+        </div>
+      `;
+
+      if (m.status === 'pending') {
+        document.getElementById('approve-btn').addEventListener('click', () => decide('approve'));
+        document.getElementById('reject-btn').addEventListener('click', () => decide('reject'));
+      }
+    }
+
+    async function decide(action) {
+      const id = new URLSearchParams(window.location.search).get('id');
+      if (action === 'reject' && !confirm('Reject this match? The reports will remain open for further review.')) return;
+      if (action === 'approve' && !confirm('Approve this match? Both cases will be marked verified and this is visible to the family.')) return;
+
+      const res = await fetch(`/api/matches/${id}/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Something went wrong.');
+        return;
+      }
+      loadMatch();
+    }
+
+    (async () => {
+      const session = await requireAdminSession();
+      if (session) loadMatch();
+    })();
+  </script>
+</body>
+</html>

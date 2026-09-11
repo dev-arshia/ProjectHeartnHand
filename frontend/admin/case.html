@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case Detail — ProjectHeartnHand</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="admin-topbar" id="admin-topbar"></div>
+
+  <main class="container-wide">
+    <p><a href="dashboard.html">&larr; Back to dashboard</a></p>
+    <div id="content-area"></div>
+  </main>
+
+  <script src="/js/admin-common.js"></script>
+  <script>
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str ?? '';
+      return div.innerHTML;
+    }
+
+    function formatDate(isoString) {
+      if (!isoString) return '—';
+      const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(isoString);
+      const d = new Date(hasZone ? isoString : isoString.replace(' ', 'T') + 'Z');
+      return d.toLocaleString();
+    }
+
+    async function loadCase() {
+      const id = new URLSearchParams(window.location.search).get('id');
+      const area = document.getElementById('content-area');
+
+      const [reportRes, auditRes, matchesRes] = await Promise.all([
+        fetch(`/api/reports/by-id/${id}`),
+        fetch(`/api/reports/by-id/${id}/audit`),
+        fetch(`/api/reports/by-id/${id}/matches`),
+      ]);
+
+      if (!reportRes.ok) {
+        area.innerHTML = `<div class="status-message error">Case not found.</div>`;
+        return;
+      }
+
+      const report = await reportRes.json();
+      const audit = await auditRes.json();
+      const matches = await matchesRes.json();
+
+      area.innerHTML = `
+        <div class="card">
+          <h2>${escapeHtml(report.full_name)} <span style="color:#6b675e; font-weight:400;">(${report.case_id})</span></h2>
+          ${statusBadge(report.status)}
+          ${report.is_minor ? '<span class="badge" style="background:#fde8e8;color:#b23a3a;">Minor</span>' : ''}
+
+          ${report.photo_path ? `<img class="evidence-photo" src="${report.photo_path}" style="margin-top:12px;">` : ''}
+
+          <div style="margin-top:16px;">
+            <div class="evidence-field"><div class="label">Report type</div>${report.report_type === 'missing' ? 'Missing person' : 'Found / rescued person'}</div>
+            <div class="evidence-field"><div class="label">Age</div>${report.age ?? '—'}</div>
+            <div class="evidence-field"><div class="label">Gender</div>${report.gender || '—'}</div>
+            <div class="evidence-field"><div class="label">Location</div>${escapeHtml(report.location)}</div>
+            <div class="evidence-field"><div class="label">Date/time</div>${formatDate(report.event_datetime)}</div>
+            <div class="evidence-field"><div class="label">Description</div>${escapeHtml(report.description) || '—'}</div>
+            <div class="evidence-field"><div class="label">Identifying marks</div>${escapeHtml(report.identifying_marks) || '—'}</div>
+            <div class="evidence-field"><div class="label">Source channel</div>${report.source_channel}</div>
+            <div class="evidence-field"><div class="label">Reporter</div>${escapeHtml(report.reporter_name) || '—'} ${report.reporter_contact ? `(${escapeHtml(report.reporter_contact)})` : ''}</div>
+            <div class="evidence-field"><div class="label">Filed</div>${formatDate(report.created_at)}</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Linked Matches</h3>
+          ${matches.length === 0 ? '<p style="color:#6b675e;">No matches generated for this case yet.</p>' : `
+            <table class="data-table">
+              <thead><tr><th>Score</th><th>Missing</th><th>Found</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                ${matches.map((m) => `
+                  <tr>
+                    <td><strong>${m.score}%</strong></td>
+                    <td>${escapeHtml(m.missing_name)} (${m.missing_case_id})</td>
+                    <td>${escapeHtml(m.found_name)} (${m.found_case_id})</td>
+                    <td>${statusBadge(m.status === 'pending' ? 'possible_match' : (m.status === 'approved' ? 'verified_match' : 'rejected'))}</td>
+                    <td><a href="match-review.html?id=${m.id}">View &rarr;</a></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `}
+        </div>
+
+        <div class="card">
+          <h3>Audit History</h3>
+          ${audit.length === 0 ? '<p style="color:#6b675e;">No history yet.</p>' : `
+            <ul class="audit-list">
+              ${audit.map((a) => `
+                <li>
+                  <strong>${a.action.replace(/_/g, ' ')}</strong> by ${escapeHtml(a.actor)}
+                  <div class="meta">${formatDate(a.created_at)}${a.notes ? ' — ' + escapeHtml(a.notes) : ''}</div>
+                </li>
+              `).join('')}
+            </ul>
+          `}
+        </div>
+      `;
+    }
+
+    (async () => {
+      const session = await requireAdminSession();
+      if (session) loadCase();
+    })();
+  </script>
+</body>
+</html>
