@@ -190,10 +190,24 @@ router.get('/by-id/:id/matches', requireAdmin, (req, res) => {
 
 // --- Get one report by public case ID (used by the family status page) ---
 // GET /api/reports/:caseId
+//
+// PRIVACY: this is the one report-lookup route with no login required —
+// anyone who has (or guesses) a case ID can call it. So unlike every
+// other route in this file, it must return only what a family member
+// checking their own case status actually needs, never the full row.
+// No location, no contact info, no photo, no identifying marks — those
+// stay behind the admin-only /by-id/:id route.
 router.get('/:caseId', (req, res) => {
   const report = db.prepare('SELECT * FROM reports WHERE case_id = ?').get(req.params.caseId.toUpperCase());
   if (!report) return res.status(404).json({ error: 'No case found with that ID' });
-  res.json(report);
+
+  res.json({
+    case_id: report.case_id,
+    report_type: report.report_type,
+    full_name: report.full_name,
+    status: report.status,
+    created_at: report.created_at,
+  });
 });
 
 module.exports = router;
