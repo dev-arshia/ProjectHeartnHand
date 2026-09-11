@@ -16,6 +16,7 @@
       <button class="tab active" data-tab="missing">Missing Reports</button>
       <button class="tab" data-tab="found">Found Reports</button>
       <button class="tab" data-tab="matches">Pending Matches</button>
+      <button class="tab" data-tab="duplicates">Possible Duplicates</button>
     </div>
 
     <div class="toolbar" id="report-toolbar">
@@ -42,7 +43,7 @@
         document.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
         currentTab = btn.dataset.tab;
-        document.getElementById('report-toolbar').style.display = currentTab === 'matches' ? 'none' : 'flex';
+        document.getElementById('report-toolbar').style.display = (currentTab === 'matches' || currentTab === 'duplicates') ? 'none' : 'flex';
         loadCurrentTab();
       });
     });
@@ -57,6 +58,7 @@
 
     async function loadCurrentTab() {
       if (currentTab === 'matches') return loadMatches();
+      if (currentTab === 'duplicates') return loadDuplicates();
       return loadReports(currentTab);
     }
 
@@ -120,6 +122,37 @@
                 <td>${escapeHtml(m.found_name)} (${m.found_case_id})</td>
                 <td>${formatDate(m.created_at)}</td>
                 <td><a href="match-review.html?id=${m.id}">Review &rarr;</a></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadDuplicates() {
+      const res = await fetch('/api/duplicates?status=pending');
+      const flags = await res.json();
+
+      const area = document.getElementById('content-area');
+      if (flags.length === 0) {
+        area.innerHTML = `<div class="empty-state">No possible duplicates right now.</div>`;
+        return;
+      }
+
+      area.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr><th>Score</th><th>Report A</th><th>Report B</th><th>Type</th><th>Generated</th><th></th></tr>
+          </thead>
+          <tbody>
+            ${flags.map((f) => `
+              <tr onclick="window.location.href='duplicate-review.html?id=${f.id}'" style="cursor:pointer">
+                <td><strong>${f.score}%</strong></td>
+                <td>${escapeHtml(f.a_name)} (${f.a_case_id})</td>
+                <td>${escapeHtml(f.b_name)} (${f.b_case_id})</td>
+                <td>${f.a_report_type}</td>
+                <td>${formatDate(f.created_at)}</td>
+                <td><a href="duplicate-review.html?id=${f.id}">Review &rarr;</a></td>
               </tr>
             `).join('')}
           </tbody>

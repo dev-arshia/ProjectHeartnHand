@@ -50,6 +50,7 @@ app.use('/api/reports', require('./routes/reports'));
 // Match evidence includes sensitive details (photos, locations, contact
 // info) — only a logged-in admin can view or act on it.
 app.use('/api/matches', requireAdmin, require('./routes/matches'));
+app.use('/api/duplicates', requireAdmin, require('./routes/duplicates'));
 app.use('/api/admin', adminRouter);
 
 app.listen(PORT, () => {

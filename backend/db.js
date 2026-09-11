@@ -71,6 +71,32 @@ db.exec(`CREATE INDEX IF NOT EXISTS idx_matches_missing ON matches(missing_repor
 db.exec(`CREATE INDEX IF NOT EXISTS idx_matches_found ON matches(found_report_id);`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_matches_status ON matches(status);`);
 
+// duplicate_flags: same idea as `matches`, but for two reports of the
+// SAME type (two missing reports, or two found reports) that look like
+// they describe the same person filed twice — e.g. one from a family
+// member and one from a volunteer, under slightly different spellings.
+// Kept as a separate table from `matches` because the review action is
+// different (merge/dismiss, not approve/reject a missing<->found link).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS duplicate_flags (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_a_id   INTEGER NOT NULL REFERENCES reports(id),
+    report_b_id   INTEGER NOT NULL REFERENCES reports(id),
+    score         INTEGER NOT NULL,
+    breakdown_json TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending','merged','dismissed')),
+    reviewed_by   TEXT,
+    reviewed_at   TEXT,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(report_a_id, report_b_id)
+  );
+`);
+
+db.exec(`CREATE INDEX IF NOT EXISTS idx_dupflags_a ON duplicate_flags(report_a_id);`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_dupflags_b ON duplicate_flags(report_b_id);`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_dupflags_status ON duplicate_flags(status);`);
+
 // audit_log: a record of every decision made in the system, so admins
 // (and judges) can see exactly who approved/rejected what and when.
 db.exec(`

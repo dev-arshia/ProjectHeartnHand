@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Duplicate Review — ProjectHeartnHand</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="admin-topbar" id="admin-topbar"></div>
+
+  <main class="container-wide">
+    <p><a href="dashboard.html">&larr; Back to dashboard</a></p>
+    <div id="content-area"></div>
+  </main>
+
+  <script src="/js/admin-common.js"></script>
+  <script>
+    const SIGNAL_LABELS = {
+      name: 'Name similarity', age: 'Age similarity', location: 'Location similarity',
+      datetime: 'Date/time proximity', description: 'Description similarity', marks: 'Identifying marks',
+    };
+
+    function reportColumn(letter, data) {
+      return `
+        <div class="evidence-column">
+          <h3>Report ${letter.toUpperCase()} &mdash; ${data[`${letter}_case_id`]}</h3>
+          ${data[`${letter}_photo`] ? `<img class="evidence-photo" src="${data[`${letter}_photo`]}" alt="Photo">` : ''}
+          <div class="evidence-field"><div class="label">Name</div>${data[`${letter}_name`]}</div>
+          <div class="evidence-field"><div class="label">Age</div>${data[`${letter}_age`] ?? '—'}</div>
+          <div class="evidence-field"><div class="label">Location</div>${data[`${letter}_location`]}</div>
+          <div class="evidence-field"><div class="label">Date/time</div>${data[`${letter}_datetime`] ? new Date(data[`${letter}_datetime`]).toLocaleString() : '—'}</div>
+          <div class="evidence-field"><div class="label">Description</div>${data[`${letter}_description`] || '—'}</div>
+          <div class="evidence-field"><div class="label">Identifying marks</div>${data[`${letter}_marks`] || '—'}</div>
+          ${data.status === 'pending' ? `<button class="btn btn-approve btn-block" onclick="decide('merge', '${letter}')">Keep this one, close the other</button>` : ''}
+        </div>
+      `;
+    }
+
+    async function loadFlag() {
+      const id = new URLSearchParams(window.location.search).get('id');
+      const area = document.getElementById('content-area');
+
+      const res = await fetch(`/api/duplicates/${id}`);
+      if (!res.ok) {
+        area.innerHTML = `<div class="status-message error">Duplicate flag not found.</div>`;
+        return;
+      }
+      const f = await res.json();
+      window.__flag = f;
+
+      const breakdownRows = Object.entries(f.breakdown).map(([key, val]) => `
+        <li class="breakdown-row"><span>${SIGNAL_LABELS[key] || key}</span><span class="label-${val.label}">${val.label}</span></li>
+      `).join('');
+
+      const statusNote = f.status !== 'pending' ? `
+        <div class="status-message ${f.status === 'merged' ? 'success' : 'error'}">
+          This pair was already <strong>${f.status}</strong> by ${f.reviewed_by} on ${new Date(f.reviewed_at).toLocaleString()}.
+        </div>
+      ` : `
+        <p style="color:#6b675e; font-size:0.85rem; margin-top:8px;">
+          If these are the same person, keep one report and the other will be closed (not deleted — it stays
+          in the audit history). If they're different people, dismiss this flag instead.
+        </p>
+        <button class="btn btn-reject btn-block" style="margin-top:12px;" onclick="decide('dismiss')">Not the same person — dismiss</button>
+      `;
+
+      area.innerHTML = `
+        <div class="card">
+          <h2>Possible Duplicate &mdash; <span class="score-badge">${f.score}%</span></h2>
+          <ul class="breakdown-list">${breakdownRows}</ul>
+        </div>
+        <div class="card">
+          <div class="evidence-grid">${reportColumn('a', f)}${reportColumn('b', f)}</div>
+          ${statusNote}
+        </div>
+      `;
+    }
+
+    async function decide(action, keep) {
+      const id = new URLSearchParams(window.location.search).get('id');
+      const label = action === 'merge' ? `Confirm report ${keep.toUpperCase()} is kept and the other closed?` : 'Dismiss this pair as unrelated?';
+      if (!confirm(label)) return;
+
+      const body = action === 'merge' ? { keep } : {};
+      const res = await fetch(`/api/duplicates/${id}/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || 'Something went wrong.'); return; }
+      loadFlag();
+    }
+
+    (async () => {
+      const session = await requireAdminSession();
+      if (session) loadFlag();
+    })();
+  </script>
+</body>
+</html>

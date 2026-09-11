@@ -9,7 +9,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const { db, normalizeName, generateCaseId } = require('../db');
-const { generateMatchesForReport } = require('../matching/generate');
+const { generateMatchesForReport, generateDuplicatesForReport } = require('../matching/generate');
 const { requireAdmin } = require('./admin');
 
 const router = express.Router();
@@ -113,11 +113,12 @@ router.post('/', upload.single('photo'), (req, res) => {
   // store any candidate matches for admin review. This can flip `created`'s
   // status from 'unverified' to 'possible_match', so we re-fetch below.
   const newMatches = generateMatchesForReport(created);
+  const newDuplicates = generateDuplicatesForReport(created);
   if (newMatches.length > 0) {
     created = db.prepare('SELECT * FROM reports WHERE id = ?').get(result.lastInsertRowid);
   }
 
-  res.status(201).json({ ...created, matches_found: newMatches.length });
+  res.status(201).json({ ...created, matches_found: newMatches.length, duplicates_found: newDuplicates.length });
 });
 
 // --- List reports (admin dashboard) ---------------------------------------
