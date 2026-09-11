@@ -2,28 +2,39 @@
    Shared styles for all public + admin pages.
    Kept deliberately simple: one file, no build step, no preprocessor. */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 :root {
-  --color-bg: #f7f5f2;
+  --color-bg: #f6f4f0;
   --color-surface: #ffffff;
-  --color-text: #26241f;
+  --color-text: #201d2b;
   --color-muted: #6b675e;
-  --color-primary: #7a3b8f;   /* purple, matches the hackathon branding */
-  --color-primary-dark: #5c2c6c;
+  --color-primary: #6d2f8a;
+  --color-primary-dark: #4f1f68;
+  --color-primary-light: #f1e6f7;
+  --color-accent: #d98a3d;      /* warm amber accent for highlights */
   --color-danger: #b23a3a;
   --color-success: #2f7a4f;
+  --color-warning: #b5820f;
   --color-border: #e3dfd6;
-  --radius: 10px;
+  --radius: 12px;
+  --shadow-sm: 0 1px 2px rgba(32, 29, 43, 0.06), 0 1px 1px rgba(32, 29, 43, 0.04);
+  --shadow-md: 0 4px 12px rgba(32, 29, 43, 0.08), 0 2px 4px rgba(32, 29, 43, 0.05);
+  --shadow-lg: 0 12px 32px rgba(32, 29, 43, 0.14);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--color-bg);
   color: var(--color-text);
-  line-height: 1.5;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3 { font-weight: 700; letter-spacing: -0.01em; }
 
 .container {
   max-width: 640px;
@@ -32,29 +43,31 @@ body {
 }
 
 header.site-header {
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
-  padding: 20px 16px;
+  padding: 32px 16px;
   text-align: center;
 }
 
 header.site-header h1 {
-  margin: 0 0 4px;
-  font-size: 1.5rem;
+  margin: 0 0 6px;
+  font-size: 1.75rem;
 }
 
 header.site-header p {
   margin: 0;
-  opacity: 0.9;
-  font-size: 0.95rem;
+  opacity: 0.92;
+  font-size: 1rem;
 }
 
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 22px;
   margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
 }
 
 .card h2 {
@@ -78,12 +91,15 @@ header.site-header p {
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
+
+.btn:active { transform: translateY(1px); }
 
 .btn:hover { opacity: 0.9; }
 
-.btn-primary { background: var(--color-primary); color: white; }
+.btn-primary { background: var(--color-primary); color: white; box-shadow: var(--shadow-sm); }
+.btn-primary:hover { box-shadow: var(--shadow-md); }
 .btn-secondary { background: white; color: var(--color-primary); border: 2px solid var(--color-primary); }
 .btn-block { width: 100%; }
 
@@ -217,11 +233,48 @@ a { color: var(--color-primary); }
   font-weight: 600;
   color: var(--color-muted);
   border-bottom: 3px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
+
+.tab:hover { color: var(--color-primary-dark); }
 
 .tab.active {
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-card.stat-success { border-left-color: var(--color-success); }
+.stat-card.stat-warning { border-left-color: var(--color-warning); }
+.stat-card.stat-alert { border-left-color: var(--color-danger); }
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .toolbar {
@@ -258,7 +311,8 @@ table.data-table th {
 }
 
 table.data-table tr:last-child td { border-bottom: none; }
-table.data-table tr:hover { background: #faf9f6; }
+table.data-table tbody tr { transition: background 0.12s ease; }
+table.data-table tbody tr:hover { background: var(--color-primary-light); }
 
 .badge {
   display: inline-block;

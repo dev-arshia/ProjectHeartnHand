@@ -12,6 +12,8 @@
   <main class="container-wide">
     <h1>Dashboard</h1>
 
+    <div class="stats-grid" id="stats-grid"></div>
+
     <div class="tabs">
       <button class="tab active" data-tab="missing">Missing Reports</button>
       <button class="tab" data-tab="found">Found Reports</button>
@@ -172,9 +174,34 @@
       return d.toLocaleString();
     }
 
+    async function loadStats() {
+      const res = await fetch('/api/admin/stats');
+      if (!res.ok) return;
+      const s = await res.json();
+
+      const cards = [
+        { label: 'Total Reports', value: s.total_reports, tone: 'neutral' },
+        { label: 'Missing', value: s.missing, tone: 'neutral' },
+        { label: 'Found / Rescued', value: s.found, tone: 'neutral' },
+        { label: 'Verified Matches', value: s.verified_match, tone: 'success' },
+        { label: 'Awaiting Review', value: s.pending_matches + s.pending_duplicates, tone: 'warning' },
+        { label: 'Minors', value: s.minors, tone: 'alert' },
+      ];
+
+      document.getElementById('stats-grid').innerHTML = cards.map((c) => `
+        <div class="stat-card stat-${c.tone}">
+          <div class="stat-value">${c.value}</div>
+          <div class="stat-label">${c.label}</div>
+        </div>
+      `).join('');
+    }
+
     (async () => {
       const session = await requireAdminSession();
-      if (session) loadCurrentTab();
+      if (session) {
+        loadStats();
+        loadCurrentTab();
+      }
     })();
   </script>
 </body>

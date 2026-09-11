@@ -72,4 +72,29 @@ router.get('/me', (req, res) => {
   res.status(401).json({ error: 'Not logged in' });
 });
 
+// --- Dashboard stats -----------------------------------------------------
+// GET /api/admin/stats
+// One summary query for the numbers shown at the top of the dashboard —
+// gives the admin a sense of overall caseload at a glance, not just
+// per-tab tables.
+router.get('/stats', requireAdmin, (req, res) => {
+  const counts = db.prepare(`
+    SELECT report_type, status, COUNT(*) as n FROM reports GROUP BY report_type, status
+  `).all();
+
+  const totals = { missing: 0, found: 0, verified_match: 0, possible_match: 0, minors: 0 };
+  for (const row of counts) {
+    totals[row.report_type] += row.n;
+    if (row.status === 'verified_match') totals.verified_match += row.n;
+    if (row.status === 'possible_match') totals.possible_match += row.n;
+  }
+
+  totals.minors = db.prepare(`SELECT COUNT(*) as n FROM reports WHERE is_minor = 1`).get().n;
+  totals.pending_matches = db.prepare(`SELECT COUNT(*) as n FROM matches WHERE status = 'pending'`).get().n;
+  totals.pending_duplicates = db.prepare(`SELECT COUNT(*) as n FROM duplicate_flags WHERE status = 'pending'`).get().n;
+  totals.total_reports = totals.missing + totals.found;
+
+  res.json(totals);
+});
+
 module.exports = { router, requireAdmin };
