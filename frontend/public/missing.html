@@ -15,6 +15,17 @@
   <main class="container">
     <div id="message-box"></div>
 
+    <div class="card" id="smart-intake-card">
+      <h2>Not sure where to start?</h2>
+      <p>Describe what you know in your own words, and we'll try to fill in the form below for you.
+         This is AI-assisted, not automatic — please review every field before submitting.</p>
+      <div class="field">
+        <textarea id="intake-text" placeholder="e.g. My son Rahul Sharma, about 22 years old, was last seen yesterday morning near Jaipur railway station. He was wearing a blue shirt and jeans."></textarea>
+      </div>
+      <button type="button" class="btn btn-secondary btn-block" id="intake-fill-btn">Auto-fill with AI</button>
+      <div id="intake-status"></div>
+    </div>
+
     <form id="missing-form" class="card">
       <!-- These two hidden fields tell the backend what kind of report this is. -->
       <input type="hidden" name="report_type" value="missing">
@@ -97,6 +108,13 @@
   <script src="/js/report-form.js"></script>
   <script>
     setupReportForm('missing-form', 'message-box');
+    setupSmartIntake({
+      textareaId: 'intake-text',
+      buttonId: 'intake-fill-btn',
+      statusId: 'intake-status',
+      formId: 'missing-form',
+      reportType: 'missing',
+    });
   </script>
 </body>
 </html>

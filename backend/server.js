@@ -6,6 +6,8 @@
 //
 // Run it with: npm start   (or npm run dev to auto-restart on file changes)
 
+require('./load-env'); // reads .env into process.env, if the file exists
+
 const path = require('node:path');
 const express = require('express');
 const cookieSession = require('cookie-session');
@@ -47,6 +49,9 @@ app.get('/api/health', (req, res) => {
 const { router: adminRouter, requireAdmin } = require('./routes/admin');
 
 app.use('/api/reports', require('./routes/reports'));
+// AI intake parsing is public (same reach as the report forms it assists) —
+// it only ever returns suggested field values, never creates a report itself.
+app.use('/api/ai', require('./routes/ai'));
 // Match evidence includes sensitive details (photos, locations, contact
 // info) — only a logged-in admin can view or act on it.
 app.use('/api/matches', requireAdmin, require('./routes/matches'));

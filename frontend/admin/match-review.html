@@ -86,10 +86,21 @@
         </div>
       `;
 
+      const explanationHtml = m.ai_explanation
+        ? `<p style="font-style:italic;">${m.ai_explanation}</p>
+           <button class="btn btn-secondary" id="explain-btn" data-regen="true">Regenerate</button>`
+        : `<button class="btn btn-secondary" id="explain-btn" data-regen="false">Generate AI Explanation</button>`;
+
       area.innerHTML = `
         <div class="card">
           <h2>Possible Match &mdash; <span class="score-badge">${m.score}%</span></h2>
           <ul class="breakdown-list">${breakdownRows}</ul>
+          <div id="explanation-area">
+            <p style="color:#6b675e; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px;">
+              AI-generated summary &mdash; a plain-language narration of the scores above, not a separate opinion. Verify independently.
+            </p>
+            ${explanationHtml}
+          </div>
         </div>
 
         <div class="card">
@@ -104,6 +115,34 @@
       if (m.status === 'pending') {
         document.getElementById('approve-btn').addEventListener('click', () => decide('approve'));
         document.getElementById('reject-btn').addEventListener('click', () => decide('reject'));
+      }
+
+      document.getElementById('explain-btn').addEventListener('click', (e) => generateExplanation(e.target.dataset.regen === 'true'));
+    }
+
+    async function generateExplanation(regenerate) {
+      const id = new URLSearchParams(window.location.search).get('id');
+      const btn = document.getElementById('explain-btn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Thinking...';
+
+      try {
+        const url = `/api/matches/${id}/explain${regenerate ? '?regenerate=true' : ''}`;
+        const res = await fetch(url, { method: 'POST' });
+        const data = await res.json();
+
+        const area = document.getElementById('explanation-area');
+        if (!data.explanation) {
+          area.innerHTML += `<div class="status-message error" style="margin-top:8px;">${data.error || 'AI explanation unavailable right now.'}</div>`;
+          btn.disabled = false;
+          btn.textContent = originalText;
+          return;
+        }
+        loadMatch(); // re-render with the (now cached) explanation shown
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     }
 

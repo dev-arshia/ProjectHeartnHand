@@ -71,6 +71,15 @@ db.exec(`CREATE INDEX IF NOT EXISTS idx_matches_missing ON matches(missing_repor
 db.exec(`CREATE INDEX IF NOT EXISTS idx_matches_found ON matches(found_report_id);`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_matches_status ON matches(status);`);
 
+// Lightweight migration: added after the table already existed in some
+// dev databases. SQLite has no "ADD COLUMN IF NOT EXISTS", so we just
+// try it and ignore the error if the column is already there.
+try {
+  db.exec(`ALTER TABLE matches ADD COLUMN ai_explanation TEXT`);
+} catch (err) {
+  // Column already exists — fine, nothing to do.
+}
+
 // duplicate_flags: same idea as `matches`, but for two reports of the
 // SAME type (two missing reports, or two found reports) that look like
 // they describe the same person filed twice — e.g. one from a family

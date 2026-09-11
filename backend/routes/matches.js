@@ -7,6 +7,7 @@
 
 const express = require('express');
 const { db } = require('../db');
+const { callGemini } = require('../ai/gemini');
 
 const router = express.Router();
 
@@ -71,6 +72,54 @@ router.get('/:id', (req, res) => {
   if (!row) return res.status(404).json({ error: 'Match not found' });
 
   res.json({ ...row, breakdown: JSON.parse(row.breakdown_json) });
+});
+
+// --- Generate a plain-language explanation of the match ---------------
+// POST /api/matches/:id/explain
+//
+// Purely descriptive: narrates the already-computed score breakdown in
+// a sentence a busy admin can read faster than six breakdown rows. Does
+// NOT influence the score or the approve/reject decision in any way —
+// it's generated from the breakdown that already exists, never the
+// other way around. Cached on the match row so repeat views don't
+// re-call the API; pass ?regenerate=true to force a fresh one.
+router.post('/:id/explain', async (req, res) => {
+  const match = db.prepare(`
+    SELECT matches.*, m.full_name AS missing_name, m.age AS missing_age,
+           m.location AS missing_location, m.event_datetime AS missing_datetime,
+           m.description AS missing_description, m.identifying_marks AS missing_marks,
+           f.full_name AS found_name, f.age AS found_age,
+           f.location AS found_location, f.event_datetime AS found_datetime,
+           f.description AS found_description, f.identifying_marks AS found_marks
+    FROM matches
+    JOIN reports m ON m.id = matches.missing_report_id
+    JOIN reports f ON f.id = matches.found_report_id
+    WHERE matches.id = ?
+  `).get(req.params.id);
+
+  if (!match) return res.status(404).json({ error: 'Match not found' });
+
+  if (match.ai_explanation && req.query.regenerate !== 'true') {
+    return res.json({ explanation: match.ai_explanation, cached: true });
+  }
+
+  const breakdown = JSON.parse(match.breakdown_json);
+  const prompt = `You are assisting a human reviewer deciding whether two disaster-relief reports describe the same person. Write ONE short paragraph (2-3 sentences, plain language, no bullet points) explaining why these two reports might or might not be the same person, based on the evidence below. Be balanced — mention any notable mismatch, not just similarities. Do not state a final verdict ("this is a match") — the human reviewer decides that, you're only summarizing the evidence.
+
+Missing person report: name "${match.missing_name}", age ${match.missing_age ?? 'unknown'}, last seen at "${match.missing_location}"${match.missing_datetime ? ` on ${match.missing_datetime}` : ''}, description: "${match.missing_description || 'none given'}", identifying marks: "${match.missing_marks || 'none given'}".
+
+Found person report: name "${match.found_name}", age ${match.found_age ?? 'unknown'}, found at "${match.found_location}"${match.found_datetime ? ` on ${match.found_datetime}` : ''}, description: "${match.found_description || 'none given'}", identifying marks: "${match.found_marks || 'none given'}".
+
+Computed similarity scores (already calculated, just for your reference): ${Object.entries(breakdown).map(([k, v]) => `${k}: ${v.label}`).join(', ')}.`;
+
+  const explanation = await callGemini(prompt);
+
+  if (!explanation) {
+    return res.status(200).json({ explanation: null, error: 'AI explanation unavailable right now — the score breakdown above is still fully valid on its own.' });
+  }
+
+  db.prepare(`UPDATE matches SET ai_explanation = ? WHERE id = ?`).run(explanation, match.id);
+  res.json({ explanation, cached: false });
 });
 
 // --- Approve a match --------------------------------------------------

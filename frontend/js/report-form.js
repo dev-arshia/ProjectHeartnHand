@@ -6,6 +6,71 @@
 //
 // Kept as plain functions (no framework) so it's easy to read top to bottom.
 
+// Wires up the "Auto-fill with AI" button on a report form. Calls
+// POST /api/ai/parse-intake with the free text the person typed, then
+// fills in whatever fields the AI could confidently extract — never
+// submits anything on its own, and always leaves the form editable so a
+// human reviews the result before hitting Submit.
+function setupSmartIntake({ textareaId, buttonId, statusId, formId, reportType }) {
+  const button = document.getElementById(buttonId);
+  const textarea = document.getElementById(textareaId);
+  const status = document.getElementById(statusId);
+  const form = document.getElementById(formId);
+
+  button.addEventListener('click', async () => {
+    const text = textarea.value.trim();
+    if (!text) {
+      status.innerHTML = `<div class="status-message error">Type a description first.</div>`;
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Reading...';
+    status.innerHTML = '';
+
+    try {
+      const response = await fetch('/api/ai/parse-intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, report_type: reportType }),
+      });
+      const data = await response.json();
+
+      if (!data.ok || !data.fields) {
+        status.innerHTML = `<div class="status-message error">Couldn't auto-fill this time — no problem, just fill in the fields below manually.</div>`;
+        return;
+      }
+
+      let filledCount = 0;
+      for (const [key, value] of Object.entries(data.fields)) {
+        if (value === null || value === undefined || value === '') continue;
+        const input = form.elements[key];
+        if (!input) continue;
+
+        let cleanValue = value;
+        // <input type="datetime-local"> only accepts "YYYY-MM-DDTHH:mm"
+        // (no seconds, no timezone) — strip anything past that or the
+        // browser silently rejects the whole value.
+        if (input.type === 'datetime-local' && typeof value === 'string') {
+          cleanValue = value.slice(0, 16);
+        }
+
+        input.value = cleanValue;
+        if (input.value) filledCount++; // browsers leave .value empty if it rejected the format
+      }
+
+      status.innerHTML = filledCount > 0
+        ? `<div class="status-message success">Filled in ${filledCount} field(s) below — please check them over before submitting.</div>`
+        : `<div class="status-message error">Couldn't find enough detail in that description — please fill in the fields manually.</div>`;
+    } catch (err) {
+      status.innerHTML = `<div class="status-message error">Something went wrong — please fill in the fields below manually.</div>`;
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Auto-fill with AI';
+    }
+  });
+}
+
 function setupReportForm(formId, messageBoxId) {
   const form = document.getElementById(formId);
   const messageBox = document.getElementById(messageBoxId);
