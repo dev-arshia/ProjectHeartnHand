@@ -406,3 +406,57 @@ table.data-table tbody tr:hover { background: var(--color-primary-light); }
   padding: 40px 20px;
   color: var(--color-muted);
 }
+
+/* --- Public "Recently Found" gallery --- */
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.gallery-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.gallery-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.gallery-photo {
+  aspect-ratio: 1;
+  background: var(--color-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.gallery-photo-placeholder {
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.gallery-info { padding: 12px; }
+
+.gallery-case-id {
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.gallery-meta {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  margin-top: 2px;
+}

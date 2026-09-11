@@ -188,6 +188,36 @@ router.get('/by-id/:id/matches', requireAdmin, (req, res) => {
   res.json(rows.map((r) => ({ ...r, breakdown: JSON.parse(r.breakdown_json) })));
 });
 
+// --- Public "Recently Found" gallery -------------------------------------
+// GET /api/reports/gallery/found
+//
+// Real disaster-response systems publish a browsable gallery of found-but-
+// not-yet-identified people, specifically so the public can self-identify
+// or recognize someone they know — this is what "controlled crowdsourcing"
+// looks like in practice: the public contributes leads, but nothing here
+// lets a stranger declare a match. That still requires filing a report
+// and going through the same scored + human-verified pipeline as everyone
+// else.
+//
+// PRIVACY: minors are excluded entirely (never shown in a public gallery,
+// regardless of status). Reports already verified or closed are excluded
+// too — once someone's identified, there's no reason to keep broadcasting
+// their photo. No reporter contact info is ever included here.
+router.get('/gallery/found', (req, res) => {
+  const rows = db.prepare(`
+    SELECT case_id, full_name, age, gender, location, description,
+           identifying_marks, photo_path, created_at
+    FROM reports
+    WHERE report_type = 'found'
+      AND is_minor = 0
+      AND status NOT IN ('verified_match', 'closed')
+    ORDER BY created_at DESC
+    LIMIT 100
+  `).all();
+
+  res.json(rows);
+});
+
 // --- Get one report by public case ID (used by the family status page) ---
 // GET /api/reports/:caseId
 //

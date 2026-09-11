@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recently Found — ProjectHeartnHand</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Recently Found</h1>
+    <p>People located at relief camps, hospitals, or by volunteers who haven't yet been identified.</p>
+  </header>
+
+  <main class="container-wide" style="padding-top:24px;">
+    <div class="card">
+      <p style="margin:0;">
+        Recognize someone here? File a <a href="missing.html">missing person report</a> with their details —
+        our system automatically checks new reports against everyone shown below and flags a possible match
+        for a human to verify. This page never confirms a match by itself.
+      </p>
+    </div>
+
+    <div id="gallery-grid" class="gallery-grid"></div>
+
+    <p><a href="index.html">&larr; Back to home</a></p>
+  </main>
+
+  <script>
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str ?? '';
+      return div.innerHTML;
+    }
+
+    async function loadGallery() {
+      const grid = document.getElementById('gallery-grid');
+      const res = await fetch('/api/reports/gallery/found');
+      const people = await res.json();
+
+      if (people.length === 0) {
+        grid.innerHTML = `<div class="empty-state">No unidentified found reports right now.</div>`;
+        return;
+      }
+
+      grid.innerHTML = people.map((p) => `
+        <div class="gallery-card">
+          <div class="gallery-photo">
+            ${p.photo_path
+              ? `<img src="${p.photo_path}" alt="Photo of person found at ${escapeHtml(p.location)}">`
+              : `<div class="gallery-photo-placeholder">No photo</div>`}
+          </div>
+          <div class="gallery-info">
+            <div class="gallery-case-id">${p.case_id}</div>
+            <div>${escapeHtml(p.full_name) || 'Name not yet known'}${p.age ? `, approx. ${p.age}` : ''}</div>
+            <div class="gallery-meta">Found: ${escapeHtml(p.location)}</div>
+            ${p.description ? `<div class="gallery-meta">${escapeHtml(p.description)}</div>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    loadGallery();
+  </script>
+</body>
+</html>
