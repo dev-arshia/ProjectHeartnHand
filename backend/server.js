@@ -8,6 +8,7 @@
 
 const path = require('node:path');
 const express = require('express');
+const cookieSession = require('cookie-session');
 
 // Importing db.js here makes sure the database file + tables exist as
 // soon as the server boots, even before any route touches them.
@@ -17,6 +18,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Signed, cookie-based sessions — no session store to run, good enough
+// for a demo-scale admin login. SESSION_SECRET should be set via .env in
+// any real deployment; falls back to a fixed dev value locally.
+app.use(cookieSession({
+  name: 'phh_session',
+  secret: process.env.SESSION_SECRET || 'dev-only-secret-change-me',
+  maxAge: 8 * 60 * 60 * 1000, // 8 hours
+}));
 
 // Serve the two frontend areas as static sites, plus the shared
 // css/js folders that both public and admin pages pull from.
@@ -34,11 +44,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'projectheartnhand', time: new Date().toISOString() });
 });
 
-app.use('/api/reports', require('./routes/reports'));
-app.use('/api/matches', require('./routes/matches'));
+const { router: adminRouter, requireAdmin } = require('./routes/admin');
 
-// Mounted in a later step:
-// app.use('/api/admin', require('./routes/admin'));
+app.use('/api/reports', require('./routes/reports'));
+// Match evidence includes sensitive details (photos, locations, contact
+// info) — only a logged-in admin can view or act on it.
+app.use('/api/matches', requireAdmin, require('./routes/matches'));
+app.use('/api/admin', adminRouter);
 
 app.listen(PORT, () => {
   console.log(`ProjectHeartnHand server running at http://localhost:${PORT}`);
