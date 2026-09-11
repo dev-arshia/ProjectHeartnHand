@@ -9,22 +9,27 @@
 // always a convenience layer — nothing in the app depends on it working.
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
-const TIMEOUT_MS = 10_000;
+// A successful call typically takes 5-6s; 8s gives it room without
+// letting a hung request drag a demo out.
+const TIMEOUT_MS = 8_000;
 
-/**
- * Calls Gemini with a prompt and returns the raw text response, or null
- * if anything goes wrong (no key configured, network error, timeout,
- * unexpected response shape).
- *
- * @param {string} prompt
- * @param {object} [options]
- * @param {boolean} [options.json] - ask Gemini to return valid JSON
- */
-async function callGemini(prompt, { json = false } = {}) {
+// Google's free tier returns 503 "high demand" fairly often — it's
+// transient, not a real failure, so we retry once with a short backoff
+// before giving up and falling back to the manual flow. Capped at 2
+// total attempts (not 3+) so a full failure still resolves in well
+// under 20s during a live demo, rather than making the audience wait.
+const MAX_ATTEMPTS = 2;
+const RETRY_DELAY_MS = 800;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callGeminiOnce(prompt, json) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.warn('[gemini] GEMINI_API_KEY not set — AI features are disabled, falling back to manual flow.');
-    return null;
+    return { text: null, retryable: false };
   }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
@@ -48,18 +53,45 @@ async function callGemini(prompt, { json = false } = {}) {
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
       console.error(`[gemini] API error ${res.status}: ${errText.slice(0, 300)}`);
-      return null;
+      // 503 (overloaded) and 429 (rate limited) are worth retrying;
+      // anything else (bad request, bad key, model not found) won't
+      // fix itself on a retry.
+      const retryable = res.status === 503 || res.status === 429;
+      return { text: null, retryable };
     }
 
     const data = await res.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return text ?? null;
+    return { text: text ?? null, retryable: false };
   } catch (err) {
     console.error(`[gemini] request failed: ${err.message}`);
-    return null;
+    // A timeout/network hiccup is also worth one retry.
+    return { text: null, retryable: true };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * Calls Gemini with a prompt and returns the raw text response, or null
+ * if it fails even after retrying transient errors (overload, rate
+ * limit, timeout). A non-retryable failure (no API key, bad request)
+ * returns null immediately without wasting time retrying.
+ *
+ * @param {string} prompt
+ * @param {object} [options]
+ * @param {boolean} [options.json] - ask Gemini to return valid JSON
+ */
+async function callGemini(prompt, { json = false } = {}) {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const { text, retryable } = await callGeminiOnce(prompt, json);
+    if (text !== null) return text;
+    if (!retryable || attempt === MAX_ATTEMPTS) return null;
+
+    console.warn(`[gemini] retrying after transient error (attempt ${attempt}/${MAX_ATTEMPTS})...`);
+    await sleep(RETRY_DELAY_MS * attempt); // 1.2s, then 2.4s
+  }
+  return null;
 }
 
 /**

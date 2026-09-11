@@ -26,7 +26,9 @@ function setupSmartIntake({ textareaId, buttonId, statusId, formId, reportType }
 
     button.disabled = true;
     button.textContent = 'Reading...';
-    status.innerHTML = '';
+    // Gemini's free tier occasionally takes a few seconds (it retries
+    // transient errors server-side) — say so, rather than looking stuck.
+    status.innerHTML = `<div style="color:#6b675e; font-size:0.85rem;">This can take up to 15 seconds...</div>`;
 
     try {
       const response = await fetch('/api/ai/parse-intake', {
