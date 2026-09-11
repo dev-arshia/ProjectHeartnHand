@@ -10,6 +10,9 @@
   },
   "keywords": ["hackathon", "disaster-response", "missing-persons"],
   "license": "MIT",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "dependencies": {
     "express": "^4.19.2",
     "fuzzball": "^2.1.3",

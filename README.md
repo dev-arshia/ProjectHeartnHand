@@ -23,13 +23,18 @@ Heart & Hand collects missing- and found-person reports, scores possible matches
 
 ## Getting started
 
+**Requires Node.js 22.5 or newer** (we use the built-in `node:sqlite` module, so no database install or C++ build tools needed — just Node itself). Check with `node --version`; if it's older, grab the latest from [nodejs.org](https://nodejs.org).
+
 ```bash
+git clone https://github.com/dev-arshia/ProjectHeartnHand.git
+cd ProjectHeartnHand
 npm install
-npm run seed   # populate demo data
 npm start
 ```
 
-Then open http://localhost:3000
+Then open http://localhost:3000 — you should see `{"status":"ok",...}` at http://localhost:3000/api/health if the server booted correctly.
+
+`npm run seed` (adds demo data) becomes available once `data/seed.js` is built — not yet.
 
 ## Project structure
 
