@@ -1,4 +1,4 @@
-# Heart & Hand
+# ProjectHeartnHand
 
 Missing Person Coordination for disaster response — a system for a first hackathon build, not a production tool.
 
