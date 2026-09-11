@@ -7,7 +7,7 @@
 // suggested field values.
 
 const express = require('express');
-const { callGeminiJson } = require('../ai/gemini');
+const { callOpenAIJson } = require('../ai/openai');
 
 const router = express.Router();
 
@@ -44,7 +44,7 @@ router.post('/parse-intake', async (req, res) => {
   }
 
   const prompt = buildIntakePrompt(text.trim(), report_type);
-  const extracted = await callGeminiJson(prompt);
+  const extracted = await callOpenAIJson(prompt);
 
   if (!extracted) {
     // Fails soft: the frontend should fall back to "please fill the form

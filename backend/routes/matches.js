@@ -7,7 +7,7 @@
 
 const express = require('express');
 const { db } = require('../db');
-const { callGemini } = require('../ai/gemini');
+const { callOpenAI } = require('../ai/openai');
 
 const router = express.Router();
 
@@ -112,7 +112,7 @@ Found person report: name "${match.found_name}", age ${match.found_age ?? 'unkno
 
 Computed similarity scores (already calculated, just for your reference): ${Object.entries(breakdown).map(([k, v]) => `${k}: ${v.label}`).join(', ')}.`;
 
-  const explanation = await callGemini(prompt);
+  const explanation = await callOpenAI(prompt);
 
   if (!explanation) {
     return res.status(200).json({ explanation: null, error: 'AI explanation unavailable right now — the score breakdown above is still fully valid on its own.' });

@@ -33,9 +33,9 @@ we deliberately did not build, and why — not an apology, a scope record.
   demo records; would need real indexing (e.g. a proper search engine or
   vector index for the photo-similarity case) at real disaster scale.
 
-## Where AI (Gemini) is used, and where it deliberately isn't
+## Where AI (OpenAI) is used, and where it deliberately isn't
 
-Two features call the Gemini API — both are assistive, neither makes a
+Two features call the OpenAI API — both are assistive, neither makes a
 decision the system acts on:
 
 1. **Smart intake parsing** turns a free-text description into suggested

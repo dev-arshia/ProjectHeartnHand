@@ -31,7 +31,7 @@ doesn't guarantee.
   found/rescued people, with a source-channel field (helpline, camp,
   hospital, volunteer, public). Includes an optional **AI-assisted
   free-text intake**: paste a rough description (like a phone transcript)
-  and Gemini pre-fills the structured fields for a human to review before
+  and AI pre-fills the structured fields for a human to review before
   submitting — it only ever suggests values, never submits on its own.
 - **Explainable fuzzy matching** — every new report is automatically
   scored against opposite-type reports on name, age, location, date/time,
@@ -62,10 +62,12 @@ doesn't guarantee.
 - **Matching:** [`fuzzball`](https://www.npmjs.com/package/fuzzball)
   (Jaro-Winkler/Levenshtein-style string similarity) + a weighted,
   explainable scoring function we wrote (`backend/matching/score.js`)
-- **AI (optional):** [Gemini API](https://aistudio.google.com/apikey)
-  (free tier) for two assistive features — see above. The app runs
-  completely fine with no key configured; both features just fall back
-  to manual entry / no explanation shown.
+- **AI (optional):** [OpenAI API](https://platform.openai.com/api-keys)
+  for two assistive features — see above. The app runs completely fine
+  with no key configured; both features just fall back to manual entry /
+  no explanation shown. (A Gemini wrapper also exists in `backend/ai/`
+  if you'd rather swap providers — see `backend/ai/openai.js` vs
+  `backend/ai/gemini.js`.)
 
 We chose this stack specifically to be finishable by a small student team
 in a hackathon timeframe — see [docs/LIMITATIONS.md](docs/LIMITATIONS.md)
@@ -86,7 +88,7 @@ npm start
 ```
 
 **Optional — enable AI features:** copy `.env.example` to `.env` and set
-`GEMINI_API_KEY` (free key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey)).
+`OPENAI_API_KEY` (get one from [platform.openai.com/api-keys](https://platform.openai.com/api-keys)).
 Not required to run or demo the app — everything else works identically
 without it.
 
