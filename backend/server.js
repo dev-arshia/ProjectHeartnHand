@@ -18,9 +18,12 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Serve the two frontend areas as static sites.
+// Serve the two frontend areas as static sites, plus the shared
+// css/js folders that both public and admin pages pull from.
 app.use('/', express.static(path.join(__dirname, '..', 'frontend', 'public')));
 app.use('/admin', express.static(path.join(__dirname, '..', 'frontend', 'admin')));
+app.use('/css', express.static(path.join(__dirname, '..', 'frontend', 'css')));
+app.use('/js', express.static(path.join(__dirname, '..', 'frontend', 'js')));
 
 // Uploaded photos (added in a later step) will live here.
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

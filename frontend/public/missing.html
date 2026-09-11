@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report a Missing Person — ProjectHeartnHand</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Report a Missing Person</h1>
+    <p>Please fill in as much as you can — partial information is still helpful.</p>
+  </header>
+
+  <main class="container">
+    <div id="message-box"></div>
+
+    <form id="missing-form" class="card">
+      <!-- These two hidden fields tell the backend what kind of report this is. -->
+      <input type="hidden" name="report_type" value="missing">
+      <input type="hidden" name="source_channel" value="public">
+
+      <div class="field">
+        <label for="full_name">Full name <span class="required">*required</span></label>
+        <input type="text" id="full_name" name="full_name" required>
+      </div>
+
+      <div class="field">
+        <label for="age">Age</label>
+        <input type="number" id="age" name="age" min="0" max="120">
+      </div>
+
+      <div class="field">
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender">
+          <option value="">Prefer not to say / unknown</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="location">Last known location <span class="required">*required</span></label>
+        <input type="text" id="location" name="location" placeholder="e.g. Jaipur, near railway station" required>
+      </div>
+
+      <div class="field">
+        <label for="event_datetime">Date/time last seen
+          <span class="hint">Approximate is fine if you're not sure.</span>
+        </label>
+        <input type="datetime-local" id="event_datetime" name="event_datetime">
+      </div>
+
+      <div class="field">
+        <label for="description">Clothing / physical description</label>
+        <textarea id="description" name="description" placeholder="e.g. Blue shirt, black jeans, medium height"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="identifying_marks">Identifying marks
+          <span class="hint">Scars, tattoos, birthmarks, etc.</span>
+        </label>
+        <textarea id="identifying_marks" name="identifying_marks"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="photo">Photo <span class="hint">Optional, but helps a lot with matching.</span></label>
+        <input type="file" id="photo" name="photo" accept="image/png, image/jpeg, image/webp">
+      </div>
+
+      <div class="field checkbox-field">
+        <input type="checkbox" id="is_minor" name="is_minor" value="true">
+        <label for="is_minor">This person is a minor (under 18)</label>
+      </div>
+
+      <hr>
+
+      <div class="field">
+        <label for="reporter_name">Your name <span class="required">*required</span></label>
+        <input type="text" id="reporter_name" name="reporter_name" required>
+      </div>
+
+      <div class="field">
+        <label for="reporter_contact">Your phone number or email <span class="required">*required</span>
+          <span class="hint">So we can reach you if there's an update.</span>
+        </label>
+        <input type="text" id="reporter_contact" name="reporter_contact" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Submit Report</button>
+    </form>
+
+    <p><a href="index.html">&larr; Back to home</a></p>
+  </main>
+
+  <script src="/js/report-form.js"></script>
+  <script>
+    setupReportForm('missing-form', 'message-box');
+  </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Case Status — ProjectHeartnHand</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Check Case Status</h1>
+    <p>Enter your case ID to see the current status of your report.</p>
+  </header>
+
+  <main class="container">
+    <form id="status-form" class="card">
+      <div class="field">
+        <label for="case_id">Case ID <span class="required">*required</span>
+          <span class="hint">e.g. MP-6223 (missing) or FP-7283 (found)</span>
+        </label>
+        <input type="text" id="case_id" name="case_id" required placeholder="MP-1234">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Check Status</button>
+    </form>
+
+    <div id="result-box"></div>
+
+    <p><a href="index.html">&larr; Back to home</a></p>
+  </main>
+
+  <script>
+    // This is a first pass — the "honest status" wording (bonus feature
+    // from the problem statement) will be expanded once the matching
+    // engine is wired up, so we can say things like
+    // "2 unverified leads under review" instead of just a raw status word.
+
+    const STATUS_LABELS = {
+      unverified: 'No matches reviewed yet — your report is on file and being checked against incoming reports.',
+      possible_match: 'A possible match has been found and is awaiting human verification. No confirmation yet.',
+      verified_match: 'A match has been confirmed by a verifier.',
+      rejected: 'A possible match was reviewed and did not turn out to be a match. Your case remains open.',
+      closed: 'This case has been closed.',
+    };
+
+    document.getElementById('status-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const caseId = document.getElementById('case_id').value.trim();
+      const resultBox = document.getElementById('result-box');
+      resultBox.innerHTML = '';
+
+      try {
+        const response = await fetch(`/api/reports/${encodeURIComponent(caseId)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Case not found.');
+        }
+
+        const statusText = STATUS_LABELS[data.status] || data.status;
+
+        resultBox.innerHTML = `
+          <div class="card">
+            <h2>Case ${data.case_id}</h2>
+            <p><strong>${data.full_name}</strong> &mdash; reported ${data.report_type === 'missing' ? 'missing' : 'found'}</p>
+            <p class="status-message success">${statusText}</p>
+          </div>
+        `;
+      } catch (err) {
+        resultBox.innerHTML = `<div class="status-message error">${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

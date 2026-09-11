@@ -1,0 +1,172 @@
+/* frontend/css/style.css
+   Shared styles for all public + admin pages.
+   Kept deliberately simple: one file, no build step, no preprocessor. */
+
+:root {
+  --color-bg: #f7f5f2;
+  --color-surface: #ffffff;
+  --color-text: #26241f;
+  --color-muted: #6b675e;
+  --color-primary: #7a3b8f;   /* purple, matches the hackathon branding */
+  --color-primary-dark: #5c2c6c;
+  --color-danger: #b23a3a;
+  --color-success: #2f7a4f;
+  --color-border: #e3dfd6;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+header.site-header {
+  background: var(--color-primary);
+  color: white;
+  padding: 20px 16px;
+  text-align: center;
+}
+
+header.site-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+}
+
+header.site-header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.button-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn {
+  display: inline-block;
+  text-align: center;
+  padding: 14px 20px;
+  border-radius: var(--radius);
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.btn:hover { opacity: 0.9; }
+
+.btn-primary { background: var(--color-primary); color: white; }
+.btn-secondary { background: white; color: var(--color-primary); border: 2px solid var(--color-primary); }
+.btn-block { width: 100%; }
+
+form .field {
+  margin-bottom: 16px;
+}
+
+form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+}
+
+form label .required {
+  color: var(--color-danger);
+  font-weight: 400;
+}
+
+form label .hint {
+  display: block;
+  font-weight: 400;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: white;
+  color: var(--color-text);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+textarea { resize: vertical; min-height: 80px; }
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.checkbox-field input { width: auto; }
+.checkbox-field label { margin: 0; font-weight: 400; }
+
+.status-message {
+  padding: 14px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+}
+
+.status-message.success {
+  background: #eaf6ef;
+  border: 1px solid var(--color-success);
+  color: var(--color-success);
+}
+
+.status-message.error {
+  background: #fbebeb;
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.case-id-display {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+footer.site-footer {
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  padding: 24px 16px;
+}
+
+a { color: var(--color-primary); }
